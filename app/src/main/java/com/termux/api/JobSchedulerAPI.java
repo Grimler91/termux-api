@@ -10,6 +10,8 @@ import android.util.Log;
 
 import com.termux.api.util.ResultReturner;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.util.Locale;
 
@@ -18,17 +20,17 @@ public class JobSchedulerAPI {
     private static final String LOG_TAG = "JobSchedulerAPI";
 
 
-    static void onReceive(TermuxApiReceiver apiReceiver, Context context, Intent intent) {
+    static void onReceive(final Context context, final JSONObject opts) {
 
-        final String scriptPath = intent.getStringExtra("script");
+        final String scriptPath = opts.optString("script");
 
-        final int periodicMillis = intent.getIntExtra("period_ms", 0);
-        final int jobId = intent.getIntExtra("job_id", 0);
-        final String networkType = intent.getStringExtra("network");
-        final boolean batteryNotLow = intent.getBooleanExtra("battery_not_low", true);
-        final boolean charging = intent.getBooleanExtra("charging", false);
-        final boolean idle = intent.getBooleanExtra("idle", false);
-        final boolean storageNotLow = intent.getBooleanExtra("storage_not_low", false);
+        final int periodicMillis = opts.optInt("period_ms", 0);
+        final int jobId = opts.optInt("job_id", 0);
+        final String networkType = opts.optString("network");
+        final boolean batteryNotLow = opts.optBoolean("battery_not_low", true);
+        final boolean charging = opts.optBoolean("charging", false);
+        final boolean idle = opts.optBoolean("idle", false);
+        final boolean storageNotLow = opts.optBoolean("storage_not_low", false);
 
         int networkTypeCode = JobInfo.NETWORK_TYPE_NONE;
         if (networkType != null) {
@@ -52,7 +54,7 @@ public class JobSchedulerAPI {
             }
         }
         if (scriptPath == null) {
-            ResultReturner.returnData(apiReceiver, intent, out -> out.println("No script path given"));
+            ResultReturner.returnData(context, out -> out.println("No script path given"));
             return;
         }
         final File file = new File(scriptPath);
@@ -68,7 +70,7 @@ public class JobSchedulerAPI {
         }
 
         if (!fileCheckMsg.isEmpty()) {
-            ResultReturner.returnData(apiReceiver, intent, out -> out.println(String.format(fileCheckMsg, scriptPath)));
+            ResultReturner.returnData(context, out -> out.println(String.format(fileCheckMsg, scriptPath)));
             return;
         }
 
@@ -80,7 +82,7 @@ public class JobSchedulerAPI {
         // Display pending jobs
         for (JobInfo job : jobScheduler.getAllPendingJobs()) {
             final JobInfo j = job;
-            ResultReturner.returnData(apiReceiver, intent, out -> out.println(String.format(Locale.ENGLISH, "Pending job %d %s", j.getId(), j.toString())));
+            ResultReturner.returnData(context, out -> out.println(String.format(Locale.ENGLISH, "Pending job %d %s", j.getId(), j.toString())));
         }
 
         ComponentName serviceComponent = new ComponentName(context, SchedulerJobService.class);
@@ -105,9 +107,8 @@ public class JobSchedulerAPI {
 
         Log.i(LOG_TAG, String.format("Scheduled job %d to call %s every %d ms - response %d",
                 jobId, scriptPath, periodicMillis, scheduleResponse));
-        ResultReturner.returnData(apiReceiver, intent, out -> out.println(String.format(Locale.ENGLISH,"Scheduled job %d to call %s every %d ms - response %d",
+        ResultReturner.returnData(context, out -> out.println(String.format(Locale.ENGLISH,"Scheduled job %d to call %s every %d ms - response %d",
                 jobId, scriptPath, periodicMillis, scheduleResponse)));
-
     }
 
 }

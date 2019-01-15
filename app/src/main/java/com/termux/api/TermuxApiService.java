@@ -144,7 +144,7 @@ public class TermuxApiService extends Service {
                 }
                 break;
 	    case "JobScheduler":
-                JobSchedulerAPI.onReceive(this, context, data);
+                JobSchedulerAPI.onReceive(context, data);
                 break;
             case "Keystore":
                 KeystoreAPI.onReceive(this, data);
