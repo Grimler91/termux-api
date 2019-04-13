@@ -13,8 +13,8 @@ public class BrightnessAPI {
 
     public static void onReceive(final Context context, JSONObject opts) {
         final ContentResolver contentResolver = context.getContentResolver();
-        if (intent.hasExtra("auto")) {
-            boolean auto = intent.getBooleanExtra("auto", false);
+        if (!opts.isNull("auto")) {
+            boolean auto = opts.optBoolean("auto", false);
             Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE, auto?Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC:Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
         }
 

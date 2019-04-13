@@ -639,7 +639,7 @@ public class DialogActivity extends AppCompatActivity {
                 textView.setPadding(56, 56, 56, 56);
                 textView.setOnClickListener(view -> {
                     InputResult result = new InputResult();
-                    result.text = values[j];
+                    result.text = values.optString(j);
                     result.index = j;
                     dialog.dismiss();
                     resultListener.onResult(result);

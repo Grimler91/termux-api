@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 
+import com.termux.api.util.TermuxApiLogger;
+
 public class TermuxApiReceiver extends BroadcastReceiver {
 
     @Override
