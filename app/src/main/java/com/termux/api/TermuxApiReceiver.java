@@ -21,12 +21,6 @@ public class TermuxApiReceiver extends BroadcastReceiver {
     }
 
     private void doWork(Context context, Intent intent) {
-        String apiMethod = intent.getStringExtra("api_method");
-        if (apiMethod == null) {
-            TermuxApiLogger.error("Missing 'api_method' extra");
-            return;
-        }
-
         Intent myService = new Intent(context, TermuxApiService.class);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
