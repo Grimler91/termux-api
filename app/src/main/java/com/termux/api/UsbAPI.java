@@ -28,6 +28,11 @@ public class UsbAPI {
     private static final String LOG_TAG = "TermuxUsbAPI";
     private static SparseArray<UsbDeviceConnection> openDevices = new SparseArray<>();
 
+    /* Version, to be increased when printed format changes */
+    private static String api_version = "usbAPI|0";
+    private static char sep = '|';
+    private static char row_sep = '\n';
+
     static void onReceive(final TermuxApiReceiver apiReceiver, final Context context, final Intent intent) {
         UsbDevice device;
         String action = intent.getAction();
@@ -67,6 +72,21 @@ public class UsbAPI {
                     ResultReturner.returnData(apiReceiver, intent, out -> {
                         boolean result = getPermission(device, context, intent);
                         out.append(result ? "yes\n" : "no\n");
+                    });
+                    break;
+
+                /* The following cases print data that is suppose to
+                 * be parsed by the termux-api userspace library */
+
+                case "getDevices":
+                    /* get info from android.hardware.usb.UsbDevice */
+                    ResultReturner.returnData(context, intent, new ResultReturner.ResultWriter() {
+                        @Override
+                        public void writeResult(PrintWriter out) throws Exception {
+                            getDevices(context, out);
+                            out.flush();
+                            out.close();
+                        }
                     });
                     break;
                 default:
@@ -236,4 +256,28 @@ public class UsbAPI {
         return fd;
     }
 
+    /* The following actions print data that is suppose to be parsed
+     * by the termux-api userspace library */
+
+    private static void getDevices(final Context context, PrintWriter out) throws IOException {
+        out.append(api_version).append(row_sep);
+        final UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
+        HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
+        for (UsbDevice dev : deviceList.values()) {
+            out.append(dev.getDeviceName()).append(sep);
+            out.append(Integer.toString(dev.getConfigurationCount())).append(sep);
+            out.append(Integer.toString(dev.getDeviceClass())).append(sep);
+            out.append(Integer.toString(dev.getDeviceId())).append(sep);
+            out.append(Integer.toString(dev.getDeviceProtocol())).append(sep);
+            out.append(Integer.toString(dev.getDeviceSubclass())).append(sep);
+            out.append(Integer.toString(dev.getInterfaceCount())).append(sep);
+            out.append(Integer.toString(dev.getProductId())).append(sep);
+            out.append(Integer.toString(dev.getVendorId())).append(sep);
+            out.append(Integer.toString(dev.hashCode())).append(sep);
+            out.append(dev.getManufacturerName().replace("\u0000", "")).append(sep);
+            out.append(dev.getProductName().replace("\u0000", "")).append(sep);
+            out.append(dev.getSerialNumber()).append(sep);
+            out.append(dev.getVersion()).append(row_sep);
+        }
+    }
 }
