@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.hardware.usb.UsbConstants;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
+import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.os.Looper;
 import android.util.JsonWriter;
@@ -84,6 +85,20 @@ public class UsbAPI {
                         @Override
                         public void writeResult(PrintWriter out) throws Exception {
                             getDevices(context, out);
+                            out.flush();
+                            out.close();
+                        }
+                    });
+                    break;
+                case "getDeviceInterfaces":
+                    /* get info from android.hardware.usb.UsbInterface */
+                    device = getDevice(apiReceiver, context, intent);
+                    if (device == null) return;
+
+                    ResultReturner.returnData(context, intent, new ResultReturner.ResultWriter() {
+                        @Override
+                        public void writeResult(PrintWriter out) throws Exception {
+                            getDeviceInterfaces(device, context, intent, out);
                             out.flush();
                             out.close();
                         }
@@ -278,6 +293,20 @@ public class UsbAPI {
             out.append(dev.getProductName().replace("\u0000", "")).append(sep);
             out.append(dev.getSerialNumber()).append(sep);
             out.append(dev.getVersion()).append(row_sep);
+        }
+    }
+
+    private static void getDeviceInterfaces(final @NonNull UsbDevice device, final Context context, final Intent intent, PrintWriter out) {
+        out.append(api_version).append(row_sep);
+        for (int i = 0; i < device.getInterfaceCount(); i++) {
+            UsbInterface intf = device.getInterface(i);
+            out.append(intf.getName()).append(sep);
+            out.append(Integer.toString(intf.getAlternateSetting())).append(sep);
+            out.append(Integer.toString(intf.getEndpointCount())).append(sep);
+            out.append(Integer.toString(intf.getId())).append(sep);
+            out.append(Integer.toString(intf.getInterfaceClass())).append(sep);
+            out.append(Integer.toString(intf.getInterfaceProtocol())).append(sep);
+            out.append(Integer.toString(intf.getInterfaceSubclass())).append(row_sep);
         }
     }
 }
