@@ -9,6 +9,7 @@ import android.hardware.usb.UsbConfiguration;
 import android.hardware.usb.UsbConstants;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
+import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.os.Looper;
@@ -119,6 +120,21 @@ public class UsbAPI {
                         }
                     });
                     break;
+                case "getInterfaceEndpoints":
+                    /* get info from android.hardware.usb.UsbEndPoint */
+                    UsbInterface intf;
+                    intf = getInterface(apiReceiver, context, intent);
+                    if (intf == null) return;
+
+                    ResultReturner.returnData(context, intent, new ResultReturner.ResultWriter() {
+                        @Override
+                        public void writeResult(PrintWriter out) throws Exception {
+                            getInterfaceEndpoints(intf, context, intent, out);
+                            out.flush();
+                            out.close();
+                        }
+                    });
+                    break;
                 default:
                     ResultReturner.returnData(apiReceiver, intent, out -> out.append("Invalid action\n"));
             }
@@ -219,6 +235,28 @@ public class UsbAPI {
             Log.i(LOG_TAG, "Found matching device at "+device.getDeviceName());
         }
         return device;
+    }
+
+    private static UsbInterface getInterface(final TermuxApiReceiver apiReceiver, final Context context, final Intent intent) {
+        String deviceName = intent.getStringExtra("device");
+        int interfaceNum = intent.getIntExtra("interface", -1);
+        if (deviceName == null || interfaceNum < 0) {
+            Log.e(LOG_TAG, "Missing device or interface in getInterface()");
+            ResultReturner.returnData(apiReceiver, intent, out ->
+                                      out.append("Need device usbfs path and interface number\n"));
+            return null;
+        }
+
+        final UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
+        HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
+        UsbInterface intf = null;
+        intf = deviceList.get(deviceName).getInterface(interfaceNum);
+        if (intf == null) {
+            ResultReturner.returnData(apiReceiver, intent, out -> out.append("No such interface\n"));
+        } else {
+            Log.i(LOG_TAG, "Found interface at "+intf.getName());
+        }
+        return intf;
     }
 
     private static boolean hasPermission(final @NonNull UsbDevice device, final Context context) {
@@ -335,6 +373,20 @@ public class UsbAPI {
             out.append(Integer.toString(intf.getInterfaceClass())).append(sep);
             out.append(Integer.toString(intf.getInterfaceProtocol())).append(sep);
             out.append(Integer.toString(intf.getInterfaceSubclass())).append(row_sep);
+        }
+    }
+
+    private static void getInterfaceEndpoints(final @NonNull UsbInterface intf, final Context context, final Intent intent, PrintWriter out) {
+        out.append(api_version).append(row_sep);
+        for (int i = 0; i < intf.getEndpointCount(); i++) {
+            UsbEndpoint endpoint = intf.getEndpoint(i);
+            out.append(Integer.toString(endpoint.getAddress())).append(sep);
+            out.append(Integer.toString(endpoint.getAttributes())).append(sep);
+            out.append(Integer.toString(endpoint.getDirection())).append(sep);
+            out.append(Integer.toString(endpoint.getEndpointNumber())).append(sep);
+            out.append(Integer.toString(endpoint.getInterval())).append(sep);
+            out.append(Integer.toString(endpoint.getMaxPacketSize())).append(sep);
+            out.append(Integer.toString(endpoint.getType())).append(row_sep);
         }
     }
 }
