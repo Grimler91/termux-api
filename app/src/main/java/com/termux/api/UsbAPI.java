@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.hardware.usb.UsbConfiguration;
 import android.hardware.usb.UsbConstants;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
@@ -85,6 +86,20 @@ public class UsbAPI {
                         @Override
                         public void writeResult(PrintWriter out) throws Exception {
                             getDevices(context, out);
+                            out.flush();
+                            out.close();
+                        }
+                    });
+                    break;
+                case "getDeviceConfigurations":
+                    /* get info from android.hardware.usb.UsbConfiguration */
+                    device = getDevice(apiReceiver, context, intent);
+                    if (device == null) return;
+
+                    ResultReturner.returnData(context, intent, new ResultReturner.ResultWriter() {
+                        @Override
+                        public void writeResult(PrintWriter out) throws Exception {
+                            getDeviceConfigurations(device, context, intent, out);
                             out.flush();
                             out.close();
                         }
@@ -293,6 +308,19 @@ public class UsbAPI {
             out.append(dev.getProductName().replace("\u0000", "")).append(sep);
             out.append(dev.getSerialNumber()).append(sep);
             out.append(dev.getVersion()).append(row_sep);
+        }
+    }
+
+    private static void getDeviceConfigurations(final @NonNull UsbDevice device, final Context context, final Intent intent, PrintWriter out) {
+        out.append(api_version).append(row_sep);
+        for (int i = 0; i < device.getConfigurationCount(); i++) {
+            UsbConfiguration config = device.getConfiguration(i);
+            out.append(config.getName()).append(sep);
+            out.append(Integer.toString(config.getId())).append(sep);
+            out.append(Integer.toString(config.getInterfaceCount())).append(sep);
+            out.append(Integer.toString(config.getMaxPower())).append(sep);
+            out.append(Boolean.toString(config.isRemoteWakeup())).append(sep);
+            out.append(Boolean.toString(config.isSelfPowered())).append(row_sep);
         }
     }
 
